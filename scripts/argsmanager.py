@@ -28,7 +28,7 @@ def init_args():
         parser.add_argument(
             "--not-running",
             action="store_true",
-            help="Receive alerts also for not running containers (created, exited, paused, dead, restarting))"
+            help="Receive alerts also for not running containers (created, exited, paused, dead, restarting)"
         )
 
         # Alert options
