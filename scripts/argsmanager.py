@@ -25,6 +25,13 @@ def init_args():
         parser.add_argument("env", help="Your env file path", type=check_env)
 
         # Optional arguments
+        parser.add_argument(
+            "--not-running",
+            action="store_true",
+            help="Receive alerts also for not running containers (created, exited, paused, dead, restarting))"
+        )
+
+        # Alert options
         alert_options = parser.add_argument_group("alert options")
         alert_options.add_argument(
             "--telegram",
