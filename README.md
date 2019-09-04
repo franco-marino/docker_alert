@@ -2,7 +2,7 @@
 # Docker HealthCheck Alert System
 
 ### Introduction
-**This python3 script sends you email and Telegram notifications when a docker container becomes unhealthy.**
+**This python3 script sends you emails and Telegram notifications when a docker container becomes unhealthy or when it isn't running.**
 
 This same work can be done with other monitor tools (check for example [cAdvisor](https://github.com/google/cadvisor), [Prometheus](https://hub.docker.com/r/prom/prometheus/)...), but it may be over-killing for your scenario.
 
@@ -53,6 +53,8 @@ positional arguments:
 
 optional arguments:
   -h, --help  show this help message and exit
+  --not-running  Receive alerts also for not running containers (created,
+                 exited, paused, dead, restarting)
 
 alert options:
   --telegram  Receive alerts through a telegram bot
