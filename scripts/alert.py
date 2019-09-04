@@ -12,7 +12,7 @@ Return an int as exit_code, which could be 0 (successful) or 3 (error)
 def send_to_stdout(message, logger):
     try:
         exit_code = 0
-        print("Result: {0}".format(message))
+        print("{0}".format(message))
         logger.log("info", "Message printed to stdout: {0}".format(message))
     except Exception as e:
         logger.log("error", "An error occured while printing to stdout: {0}".format(e))

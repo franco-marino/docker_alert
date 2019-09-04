@@ -3,6 +3,7 @@ import requests
 import json
 import os
 import sys
+from collections import defaultdict
 from dotenv import load_dotenv
 from pathlib import Path
 from scripts import argsmanager, alert, logger
@@ -47,7 +48,7 @@ def get_unhealthy_containers(containers_json, logger):
 """
 Search for not running (eg created, exited, paused, dead, restarting) containers inside a given JSON object recovered from Docker APIs
 Need the JSON object and a logger object as parameters
-Return an array of not running containers names
+Return an array of key-pair values about not-running containers with format (Container_name, Container_state)
 """
 def get_not_running_containers(containers_json, logger):
     # Initialize the not_running_containers array
@@ -57,7 +58,7 @@ def get_not_running_containers(containers_json, logger):
     if len(containers_json) > 0:
         for container in containers_json:
             if container["State"].find("running") < 0:
-                not_running_containers.append(container["Names"][0][1:])
+                not_running_containers.append((container["Names"][0][1:], container["State"]))
                 logger.log("info", "Found not running container: {0}".format(container["Names"][0][1:]))
     else:
         logger.log("info", "There aren't containers")
@@ -90,42 +91,52 @@ def main():
 
     # Get containers status and details via JSON Docker API
     containers_json = get_containers_json()
-
+    
+    # Initialize the alert message
+    alert_msg = ""
+    
     # Get unhealthy containers array
     unhealthy_containers = get_unhealthy_containers(containers_json, logg)
+    
+    # Add unhealthy containers to the alert message (only if there are)
+    if len(unhealthy_containers) > 0:
+        alert_msg += "The following containers are unhealthy:\n"
+        for container in unhealthy_containers:
+            alert_msg += "{0} \n".format(container)
+        alert_msg += "\n"
 
-    # Get not running containers array (only if --not-running argument is set)
+    # Get not-running containers array (only if --not-running argument is set)
     if args.not_running:
         not_running_containers = get_not_running_containers(containers_json, logg)
 
-    # Send alerts (if necessary)
-    if len(unhealthy_containers) > 0 or (args.not_running and len(not_running_containers) > 0):
-        # Initialize the alert message
-        msg = ""
-
-        # Add to the alert message unhealthy containers (only if there are)
-        if len(unhealthy_containers) > 0:
-            msg += "The following containers are unhealthy:\n"
-            for container in unhealthy_containers:
-                msg += "{0} \n".format(container)
-
-        # Add to the alert message not running containers (only if --notrunning argument is set and only if there are "not running" containers)
-        if args.not_running and len(not_running_containers) > 0:
-            msg += "The following containers aren't running:\n"
-            for container in not_running_containers:
-                msg += "{0} \n".format(container)
-
-        # Send alerts via the right method
+        # Add not-running containers to the alert message (only if there are)
+        if len(not_running_containers) > 0:
+            # Convert not_running_containers to a defaultdict(list)
+            not_running_containers_defaultdict = defaultdict(list)
+            for container_name, container_state in not_running_containers:
+                not_running_containers_defaultdict[container_state].append(container_name)
+            # Group not-running containers by their state and add them to the alert message
+            for container_state, container_names_array in not_running_containers_defaultdict.items():
+                alert_msg += "The following containers are "+container_state+":\n"
+                for container_name in container_names_array:
+                    alert_msg += "{0} \n".format(container_name)
+                alert_msg += "\n"
+            
+    # Remove trailing whitespaces
+    alert_msg = alert_msg.rstrip()
+    
+    # Send alerts via the right method (if there is something to send)
+    if len(alert_msg) > 0:
         if args.stdout:
-            exit_code_temp = alert.send_to_stdout(msg, logg)
+            exit_code_temp = alert.send_to_stdout(alert_msg, logg)
             if exit_code == 0:
                 exit_code = exit_code_temp
         if args.telegram:
-            exit_code_temp = alert.send_telegram_alert(msg, logg)
+            exit_code_temp = alert.send_telegram_alert(alert_msg, logg)
             if exit_code == 0:
                 exit_code = exit_code_temp
         if args.mail:
-            exit_code_temp = alert.send_mail(msg, logg)
+            exit_code_temp = alert.send_mail(alert_msg, logg)
             if exit_code == 0:
                 exit_code = exit_code_temp
     else:
