@@ -74,7 +74,7 @@ def main():
     args = argsmanager.init_args()
 
     # Exit with exit_code 1 if there are argument errors
-    if args == None:
+    if not args:
         sys.exit(1)
 
     # Load .env file
