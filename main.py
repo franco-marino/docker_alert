@@ -89,38 +89,42 @@ def main():
     # Log script started
     logg.log("info", "Script started. Env file path='{0}', send telegram message = {1}, send email = {2}, send to stdout= {3}".format(args.env, args.telegram, args.mail, args.stdout))
 
-    # Get containers status and details via JSON Docker API
-    containers_json = get_containers_json()
-    
     # Initialize the alert message
     alert_msg = ""
     
-    # Get unhealthy containers array
-    unhealthy_containers = get_unhealthy_containers(containers_json, logg)
-    
-    # Add unhealthy containers to the alert message (only if there are)
-    if len(unhealthy_containers) > 0:
-        alert_msg += "The following containers are unhealthy:\n"
-        for container in unhealthy_containers:
-            alert_msg += "{0} \n".format(container)
-        alert_msg += "\n"
+    try:
+        # Get containers status and details via JSON Docker API
+        containers_json = get_containers_json()
+        
+        # Get unhealthy containers array
+        unhealthy_containers = get_unhealthy_containers(containers_json, logg)
+        
+        # Add unhealthy containers to the alert message (only if there are)
+        if len(unhealthy_containers) > 0:
+            alert_msg += "The following containers are unhealthy:\n"
+            for container in unhealthy_containers:
+                alert_msg += "{0} \n".format(container)
+            alert_msg += "\n"
 
-    # Get not-running containers array (only if --not-running argument is set)
-    if args.not_running:
-        not_running_containers = get_not_running_containers(containers_json, logg)
+        # Get not-running containers array (only if --not-running argument is set)
+        if args.not_running:
+            not_running_containers = get_not_running_containers(containers_json, logg)
 
-        # Add not-running containers to the alert message (only if there are)
-        if len(not_running_containers) > 0:
-            # Convert not_running_containers to a defaultdict(list)
-            not_running_containers_defaultdict = defaultdict(list)
-            for container_name, container_state in not_running_containers:
-                not_running_containers_defaultdict[container_state].append(container_name)
-            # Group not-running containers by their state and add them to the alert message
-            for container_state, container_names_array in not_running_containers_defaultdict.items():
-                alert_msg += "The following containers are "+container_state+":\n"
-                for container_name in container_names_array:
-                    alert_msg += "{0} \n".format(container_name)
-                alert_msg += "\n"
+            # Add not-running containers to the alert message (only if there are)
+            if len(not_running_containers) > 0:
+                # Convert not_running_containers to a defaultdict(list)
+                not_running_containers_defaultdict = defaultdict(list)
+                for container_name, container_state in not_running_containers:
+                    not_running_containers_defaultdict[container_state].append(container_name)
+                # Group not-running containers by their state and add them to the alert message
+                for container_state, container_names_array in not_running_containers_defaultdict.items():
+                    alert_msg += "The following containers are "+container_state+":\n"
+                    for container_name in container_names_array:
+                        alert_msg += "{0} \n".format(container_name)
+                    alert_msg += "\n"
+    except requests.exceptions.ConnectionError:
+        alert_msg = "Connection to docker socket failed. Maybe docker daemon is down?"
+        exit_code = 4
             
     # Remove trailing whitespaces
     alert_msg = alert_msg.rstrip()
