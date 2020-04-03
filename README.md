@@ -74,6 +74,7 @@ Here is the list of all possible exit codes (in bash you can check them with `ec
  - 1: errors parsing arguments
  - 2: errors parsing the .env config file
  - 3: communication errors (email/telegram unreachable or permission error writing to stdout)
+ - 4: docker_alert script crashed during a connection error with docker daemon (because of permission problems, wrong socket path, docker is not working correctly, etc)
 
 If multiple errors occurs, the exit code refers to the first.<br>
 If an error occurs, you can find more detailed information in the logs (see below section).
