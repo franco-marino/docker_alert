@@ -79,8 +79,7 @@ If an error occurs, you can find more detailed information in the logs (see belo
 The script save detailed logs inside the log path set in the .env config file.<br>
 Log files are rotated based on their size and you can set their max size and their maximum number with appropriate configurations in the .env file.<br>
 
-### To-do list
- - Add a setting to config to tries to connect N times to the docker daemon before sending a notification because it is down (this is useful especially when the server starts, to not receive a notification while the daemon is starting slowly).
+### To-do
  - We aim to integrate more ways to receive alerts, like Slack or Facebook.<br>
  If you need a particular one, or you want to collaborate, feel free to open an issue or a pull request.
 
